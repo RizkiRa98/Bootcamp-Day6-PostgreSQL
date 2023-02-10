@@ -1,0 +1,43 @@
+<!-- Body -->
+<h3>Contact List</h3>
+<a href="./createContact" class="mt-2 mb-2 btn btn-success">Create Contact</a>
+
+<% if (message.length) { %>
+<div class="alert alert-success" role="alert">
+  <%= message[0].message %>
+</div>
+<% } %>
+
+<table class="table table-striped">
+  <tr>
+    <td class="fw-bold">No</td>
+    <td class="fw-bold">Nama</td>
+    <td class="fw-bold">Mobile</td>
+    <td class="fw-bold text-center" colspan="3">Action</td>
+  </tr>
+  <!-- pengkondisian jika Data tidak ada -->
+  <% if (!contact.length) { %>
+  <tr>
+    <td colspan="2" style="color: red;">Data Tidak ada</td>
+  </tr>
+  <% } %>
+  <!-- End Pengkondisian Error -->
+
+  <!-- Mengambil array dari app menggunakan forEach -->
+  <% contact.forEach((element, i) => { %>
+  <tr>
+    <td><%= i+=1 %></td>
+    <td><%= element.name %> </td>
+    <td><%= element.mobile%></td>
+    <td width="50"><a class="btn btn-success" href="./detailContact/<%= element.name  %>">Detail</a></td>
+    <td width="50"><a class="btn btn-warning" href="./editContact/<%= element.name  %>">Edit</a></td>
+    <td width="50">
+      <button type="button" class="btn btn-danger" onclick="deleted('<%= element.name %>')">DELETE</button>
+      <!-- <form action="/contact/delete?__method=DELETE" method="POST" onclick="return confirm('Yakin Hapus Kontak ini ?')">
+        <input type="hidden" value="<%= element.name %>" name="name">
+        <button class="btn btn-danger" type="submit" value="delete">Delete</button></form> -->
+    </td>
+  </tr>
+  <% }) %>
+  <!-- End forEach -->
+</table>

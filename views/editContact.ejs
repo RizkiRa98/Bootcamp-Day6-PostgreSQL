@@ -1,0 +1,44 @@
+<div class="container">
+  <h3>Edit Contact</h3>
+  <% if (message.length) { %>
+  <div class="alert alert-danger" role="alert">
+    <ul>
+      <% message.forEach(error => { %>
+      <li>
+        <%= error.message %>
+      </li>
+      <% }) %>
+    </ul>
+  </div>
+  <% } %>
+  <% if(contact){ %>
+  <form action="/editContact?__method=PUT" method="post">
+    <div class="mb-3">
+      <label for="InputName" class="form-label">Old Name</label>
+      <input type="text" class="form-control" id="inputName" name="oldName" value="<%= contact.name %>" readonly>
+    </div>
+
+    <div class="mb-3">
+      <label for="InputName" class="form-label">Name</label>
+      <input type="text" class="form-control" id="inputName" name="name" value="<%= contact.name %>" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="InputEmail1" class="form-label">Email address</label>
+      <input type="email" class="form-control" id="inputEmail" name="email" value="<%= contact.email %>">
+    </div>
+
+    <div class="mb-3">
+      <label for="InputMobile" class="form-label">Mobile Phone Number</label>
+      <input type="text" class="form-control" id="inputMobile" name="mobile" value="<%= contact.mobile %>">
+    </div>
+
+    <button type=" submit" class="btn btn-primary">Submit</button>
+    <a href="/contact" class="btn btn-dark">Kembali</a>
+  </form>
+  <% } else { %>
+  <div class="alert alert-warning" role="alert">
+    Data Tidak ada <a href="/contact" class="alert-link">Klik Untuk Kembali</a>
+  </div>
+  <% } %>
+</div>
