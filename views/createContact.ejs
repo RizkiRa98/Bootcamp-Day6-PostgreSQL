@@ -12,22 +12,22 @@
   </div>
   <% } %>
   <form action="/createContact" method="post">
-    <div class="mb-3">
+    <div class="mb-3 w-50">
       <label for="InputName" class="form-label">Name</label>
       <input type="text" class="form-control" id="inputName" name="name"
         <% if (oldData.length) { %>value="<%= oldData[0].name %>" <% } %>required>
     </div>
 
-    <div class="mb-3">
+    <div class="mb-3 w-50">
       <label for="InputEmail1" class="form-label">Email address</label>
       <input type="email" class="form-control" id="inputEmail" name="email"
         <% if (oldData.length) { %>value="<%= oldData[0].email %>" <% } %>>
     </div>
 
-    <div class="mb-3">
+    <div class="mb-3 w-50">
       <label for="InputMobile" class="form-label">Mobile Phone Number</label>
       <input type="text" class="form-control" id="inputMobile" name="mobile"
-        <% if (oldData.length) { %>value="<%= oldData[0].mobile %>" <% } %>>
+        <% if (oldData.length) { %>value="<%= oldData[0].mobile %>" <% } %> required>
     </div>
 
     <button type="submit" class="btn btn-primary">Submit</button>
