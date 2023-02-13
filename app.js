@@ -10,6 +10,27 @@ const methodOverride = require("method-override");
 const flash = require("connect-flash");
 const session = require("express-session");
 
+//call database
+const pool = require("./db");
+
+//membuat req body diterima dalam bentuk data JSON
+app.use(express.json());
+
+//insert data ke database
+app.get("/addasync", async (req, res) => {
+  try {
+    const name = "Rizki";
+    const email = "rizkir@gmail.com";
+    const mobile = "081563965621";
+    const newCont = await pool.query(
+      `INSERT INTO contacts values ('${name}','${email}' , '${mobile}') RETURNING *`
+    );
+    res.json(newCont);
+  } catch (err) {
+    console.log(err.message);
+  }
+});
+
 //Get data from JSON
 // app.use(bodyParser.json());
 app.use(
@@ -51,19 +72,16 @@ app.set("view engine", "ejs");
 
 // '/' meaning root
 app.get("/", (req, res) => {
-  // res.send('Hello World!')
   res.render("index", {
     pageName: "Home Page",
   });
 });
 
 //memanggil halaman contact
-app.get("/contact", (req, res) => {
-  // console.log(contact);
-  // res.send('<h1> Halaman contact </h1>');
-  const contact = JSON.parse(fs.readFileSync("./contacts.json", "utf-8"));
+app.get("/contact", async (req, res) => {
+  const contact = await pool.query("SELECT * FROM contacts ORDER BY name ASC");
   res.render("contact", {
-    contact,
+    contact: contact.rows,
     pageName: "Contact Page",
     message: req.flash("message"),
   });
@@ -79,31 +97,30 @@ app.get("/createContact", (req, res) => {
 });
 
 //Memanggil halaman detailContact dengan ID name
-app.get("/detailContact/:name", (req, res) => {
+app.get("/detailContact/:name", async (req, res) => {
   const name = req.params.name;
-  const contact = JSON.parse(fs.readFileSync("./contacts.json", "utf-8"));
-  const detail = contact.find(
-    (contact) => contact.name.toUpperCase() === name.toUpperCase()
+  const detail = await pool.query(
+    `SELECT * FROM contacts WHERE name = '${name.toLowerCase()}' `
   );
+
   res.render("detailContact", {
     pageName: "Detail Contact",
-    detail,
+    detail: detail.rows[0],
   });
 });
 
 //memanggil halaman about
 app.get("/about", (req, res) => {
-  // res.send('<h1> Halaman About </h1>');
   res.render("about", {
     pageName: "About Page",
   });
 });
 
 //Memanggil Halaman Edit Berdasarkan Nama
-app.get("/editContact/:name", (req, res) => {
-  const contact = fungsi.getDataByName(req.params.name);
+app.get("/editContact/:name", async (req, res) => {
+  const contact = await fungsi.getDataByName(req.params.name);
   res.render("editContact", {
-    contact,
+    contact: contact,
     pageName: "Edit Contact",
     message: req.flash("message"),
     oldData: req.flash("oldData"),
@@ -111,8 +128,8 @@ app.get("/editContact/:name", (req, res) => {
 });
 
 //Melakukan Update
-app.put("/editContact", (req, res) => {
-  fungsi.update(
+app.put("/editContact", async (req, res) => {
+  await fungsi.update(
     req,
     res,
     req.body.oldName,
@@ -123,24 +140,14 @@ app.put("/editContact", (req, res) => {
 });
 
 //Add Data Contact
-app.post("/createContact", (req, res) => {
+app.post("/createContact", async (req, res) => {
   fungsi.create(req, res, req.body.name, req.body.email, req.body.mobile);
-  // console.log(req.body.name);
-  res.redirect("contact");
 });
 
 //Delete Data Contact
-app.get("/contact/deleted/:name", (req, res) => {
-  console.log(req.params.name);
-  fungsi.delData(req.params.name);
-  res.redirect("/contact");
+app.get("/contact/deleted/:name", async (req, res) => {
+  await fungsi.delData(req, res, req.params.name);
 });
-
-// app.get("/contact/delete/:name", (req, res) => {
-//   // fungsi.delData(res, req.body.name);
-//   // res.redirect("contact");
-//   console.log(req.params.name);
-// });
 
 app.use("/", (req, res, next) => {
   res.status(404);

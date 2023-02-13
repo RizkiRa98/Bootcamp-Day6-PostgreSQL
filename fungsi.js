@@ -2,25 +2,20 @@ const fs = require("fs");
 const validator = require("validator");
 const session = require("express-session");
 const flash = require("connect-flash");
+const pool = require("./db");
 
 //fungsi create
-const create = (req, res, name, email, mobile) => {
-  const contact = {
-    name,
-    email,
-    mobile,
-  };
+const create = async (req, res, name, email, mobile) => {
   const message = [];
-  const data = JSON.parse(fs.readFileSync("./contacts.json", "utf-8"));
-  const cek = data.find(
-    (contact) => contact.name.toUpperCase() === name.toUpperCase()
+  //validasi nama
+  const cek = await pool.query(
+    `SELECT * FROM contacts WHERE name = '${name}' `
   );
-  if (cek) {
+  if (cek.rows.length) {
     message.push({ message: "Nama Sudah Terdaftar Di Dalam Kontak" });
-    // console.log("Nama Sudah Terdaftar Di Dalam Kontak");
-    // return false;
   }
 
+  //validasi email
   if (email) {
     if (!validator.isEmail(email)) {
       message.push({
@@ -28,6 +23,7 @@ const create = (req, res, name, email, mobile) => {
       });
     }
   }
+  //Validasi mobile phone
   if (mobile) {
     if (!validator.isMobilePhone(mobile, "id-ID")) {
       message.push({
@@ -47,38 +43,41 @@ const create = (req, res, name, email, mobile) => {
     res.redirect("/createContact");
     return false;
   }
-  data.push(contact);
-  fs.writeFileSync("./contacts.json", JSON.stringify(data));
+
+  //query insert ke database
+  await pool.query(
+    `INSERT INTO contacts(name, email, mobile) VALUES('${name.toLowerCase()}', '${email.toLowerCase()}', '${mobile.toLowerCase()}')`
+  );
   message.push({
     message: "Data Baru Berhasil Tersimpan",
   });
   req.flash("message", message);
   console.log("Data Baru Berhasil Tersimpan");
+  res.redirect("contact");
 };
 
 //Get Nama
-function getDataByName(name) {
-  const data = JSON.parse(fs.readFileSync("./contacts.json", "utf-8"));
-  const contact = data.find((contact) => contact.name === name);
-  return contact;
+async function getDataByName(name) {
+  const contact = await pool.query(
+    `SELECT * FROM contacts WHERE name = '${name}' `
+  );
+  return contact.rows[0];
 }
 
 //Fungsi Update
-function update(req, res, oldName, name, email, mobile) {
-  const data = JSON.parse(fs.readFileSync("./contacts.json", "utf-8"));
-  const index = data.findIndex(
-    (contact) => contact.name.toUpperCase() === oldName.toUpperCase()
-  );
-  const cek = data.find(
-    (contact) => contact.name.toUpperCase() === name.toUpperCase()
-  );
+async function update(req, res, oldName, name, email, mobile) {
   const message = [];
-  if (cek) {
-    // console.log("Nama Kontak Sudah Ada");
-    message.push({ message: "Nama Sudah Terdaftar Di Dalam Kontak" });
-    // return false;
+
+  // validasi cek nama
+  if (name !== oldName) {
+    const cek = await pool.query(
+      `SELECT * FROM contacts WHERE name = '${name}'`
+    );
+    if (cek.rows.length) {
+      message.push({ message: "Nama Sudah Ada" });
+    }
+    console.log(cek);
   }
-  data[index].name = name;
 
   //validasi email
   if (email) {
@@ -87,7 +86,6 @@ function update(req, res, oldName, name, email, mobile) {
         message: "Format Email Salah!",
       });
     }
-    data[index].email = email;
   }
 
   //validasi Mobile
@@ -97,9 +95,9 @@ function update(req, res, oldName, name, email, mobile) {
         message: "Format Mobile Phone Salah! Gunakan format 08",
       });
     }
-    data[index].mobile = mobile;
   }
 
+  //Jika data salah, agar isi input tidak hilang
   const oldData = {
     name,
     email,
@@ -112,7 +110,11 @@ function update(req, res, oldName, name, email, mobile) {
     res.redirect(`/editContact/${oldName}`);
     return false;
   }
-  fs.writeFileSync("./contacts.json", JSON.stringify(data));
+
+  //query update database
+  await pool.query(
+    `UPDATE contacts SET name='${name.toLowerCase()}', email='${email.toLowerCase()}', mobile='${mobile.toLowerCase()}' WHERE name = '${oldName}' `
+  );
   message.push({
     message: "Data Berhasil Di Edit",
   });
@@ -121,20 +123,22 @@ function update(req, res, oldName, name, email, mobile) {
 }
 
 //Fungsi Delete
-function delData(name) {
-  const data = JSON.parse(fs.readFileSync("./contacts.json", "utf-8"));
-  const hapus = data.filter(
-    (contact) => contact.name.toLowerCase() !== name.toLowerCase()
-  );
-  if (data.length !== hapus.length) {
-    console.log(`kontak ${name} Berhasil Terhapus`);
-    fs.writeFileSync("./contacts.json", JSON.stringify(hapus));
-    return false;
-  } else {
-    console.log("Kontak tidak ada");
-    return false;
+async function delData(req, res, name) {
+  const message = [];
+  const cek = await pool.query(`SELECT * FROM contacts WHERE name = '${name}'`);
+  if (!cek) {
+    message.push({
+      message: `Data '${name} Tidak Ada'`,
+    });
   }
-  // console.log(name);
+
+  //query delete data
+  await pool.query(`DELETE FROM contacts WHERE name='${name}'`);
+  message.push({
+    message: `Data '${name}' Berhasil Dihapus`,
+  });
+  req.flash("message", message);
+  res.redirect("/contact");
 }
 
 module.exports = {
